@@ -19,6 +19,12 @@ terraform {
       version = "2.15.0"
     }
   }
+  backend "azurerm" {
+    resource_group_name  = "rg-terraform"
+    storage_account_name = "fmigueltfstate"
+    container_name       = "springstate"
+    key                  = "terraform.tfstate"
+  }
 }
 
 provider "azapi" {
