@@ -36,6 +36,8 @@ resource "azurerm_kubernetes_cluster" "aks" {
     ]
     azure_rbac_enabled = true
   }
+
+  oidc_issuer_enabled = true
 }
 
 # grant permission to aks to pull images from acr

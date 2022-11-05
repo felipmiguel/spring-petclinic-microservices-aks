@@ -9,10 +9,14 @@ terraform {
       version = "1.2.16"
     }
     azapi = {
-      source  = "azure/azapi"
+      source = "azure/azapi"
     }
     azuread = {
-      source  = "hashicorp/azuread"
+      source = "hashicorp/azuread"
+    }
+    kubernetes = {
+      source  = "hashicorp/kubernetes"
+      version = "2.15.0"
     }
   }
 }
@@ -25,6 +29,13 @@ provider "azurerm" {
 }
 
 provider "azuread" {
+}
+
+provider "kubernetes" {
+  host                   = module.service.cluster_fqdn
+  client_certificate     = base64decode(module.service.client_certificate)
+  client_key             = base64decode(module.service.client_key)
+  cluster_ca_certificate = base64decode(module.service.cluster_ca_certificate)
 }
 
 locals {
@@ -92,4 +103,26 @@ module "admins" {
   application_name = var.application_name
   environment      = local.environment
   admin_ids        = var.admin_ids
+}
+
+resource "kubernetes_namespace" "app_namepsace" {
+  metadata {
+    name = var.apps_namespace
+    labels = {
+      "environment" = var.environment
+      "app"         = var.application_name
+    }
+  }
+}
+
+module "k8s_apps" {
+  count               = length(var.apps)
+  source              = "./modules/k8s-app"
+  resource_group      = azurerm_resource_group.main.name
+  application_name    = var.application_name
+  environment         = local.environment
+  location            = var.location
+  appname             = var.apps[count.index]
+  namespace           = kubernetes_namespace.app_namepsace.metadata[0].name
+  aks_oidc_issuer_url = module.service.oidc_issuer_url
 }
