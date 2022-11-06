@@ -55,3 +55,51 @@ resource "azapi_resource" "federated_credential" {
 #   issuer                = var.aks_oidc_issuer_url
 #   subject               = "system:serviceaccount:${var.namespace}:${var.appname}"
 # }
+
+resource "kubernetes_deployment" "app_deployment" {
+  metadata {
+    name      = var.appname
+    namespace = var.namespace
+  }
+
+  spec {
+    selector {
+      match_labels = {
+        app = var.appname
+      }
+    }
+    template {
+      metadata {
+        labels = {
+          app = var.appname
+        }
+      }
+      spec {
+        service_account_name = kubernetes_service_account.service_account.metadata[0].name
+        container {
+          name  = var.appname
+          image = var.image
+          
+          env {
+            name  = "SPRING_DATASOURCE_AZURE_PASSWORDLESSENABLED"
+            value = "true"
+          }
+          env {
+            name  = "SPRING_DATASOURCE_AZURE_URL"
+            value = var.database_url
+          }
+          liveness_probe {
+            http_get {
+              path = "/actuator/health"
+              port = "http"
+            }
+            initial_delay_seconds = 30
+            period_seconds        = 30
+          }
+        }
+      }
+      
+    }
+  }
+  
+}

@@ -28,8 +28,3 @@ variable "namespace" {
   description = "Namespace of the application"
   type        = string
 }
-
-variable "aks_oidc_issuer_url" {
-  description = "The issuer URL for the AKS cluster"
-  type        = string
-}

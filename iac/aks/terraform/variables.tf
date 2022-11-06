@@ -31,13 +31,4 @@ variable "mysql_aad_admin" {
   description = "Azure AD user to be configured as MySQL admin"
 }
 
-variable "apps" {
-  type        = list(string)
-  description = "List of applications to deploy"
-  default     = ["customer-service", "vets-service", "visits-service"]
-}
 
-variable "apps_namespace" {
-  type    = string
-  default = "spring-petclinic"
-}
