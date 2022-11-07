@@ -3,6 +3,11 @@ output "resource_group" {
   description = "The resource group."
 }
 
+output "acr_name" {
+  value       = module.acr.registry_name
+  description = "The name of the container registry."
+}
+
 output "cluster_name" {
   value       = module.service.cluster_name
   description = "The name of the AKS cluster."

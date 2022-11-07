@@ -1,31 +1,15 @@
-FROM openjdk:11-jre as builder
-WORKDIR application
+FROM openjdk:8-jdk-slim
+# takes the jar file as an argument
 ARG ARTIFACT_NAME
-COPY ${ARTIFACT_NAME}.jar application.jar
-RUN java -Djarmode=layertools -jar application.jar extract
-
-# Download dockerize and cache that layer
-ARG DOCKERIZE_VERSION
-RUN wget -O dockerize.tar.gz https://github.com/jwilder/dockerize/releases/download/${DOCKERIZE_VERSION}/dockerize-alpine-linux-amd64-${DOCKERIZE_VERSION}.tar.gz
-RUN tar xzf dockerize.tar.gz
-RUN chmod +x dockerize
-
-
-# wget is not installed on adoptopenjdk:11-jre-hotspot
-FROM adoptopenjdk:11-jre-hotspot
-
-WORKDIR application
-
-# Dockerize
-COPY --from=builder application/dockerize ./
-
 ARG EXPOSED_PORT
+# assumes the application entry port is 8080
 EXPOSE ${EXPOSED_PORT}
 
-ENV SPRING_PROFILES_ACTIVE docker
+# The application's jar file
+ARG JAR_FILE=${ARTIFACT_NAME}
 
-COPY --from=builder application/dependencies/ ./
-COPY --from=builder application/spring-boot-loader/ ./
-COPY --from=builder application/snapshot-dependencies/ ./
-COPY --from=builder application/application/ ./
-ENTRYPOINT ["java", "org.springframework.boot.loader.JarLauncher"]
+# Add the application's jar to the container
+ADD ${JAR_FILE} app.jar
+
+# Run the jar file
+ENTRYPOINT ["java","-jar","/app.jar"]
