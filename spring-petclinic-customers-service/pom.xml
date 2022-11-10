@@ -15,7 +15,7 @@
 	</parent>
 
     <properties>
-        <docker.image.exposed.port>8081</docker.image.exposed.port>
+        <!-- <docker.image.exposed.port>8081</docker.image.exposed.port> -->
         <docker.image.dockerfile.dir>${basedir}/../docker</docker.image.dockerfile.dir>
     </properties>
 
@@ -91,6 +91,13 @@
             <groupId>de.codecentric</groupId>
             <artifactId>chaos-monkey-spring-boot</artifactId>
         </dependency>
+
+        <!--Passwordless spring starter for mysql -->
+		<dependency>
+			<groupId>com.azure.spring</groupId>
+			<artifactId>spring-cloud-azure-starter-jdbc-mysql</artifactId>
+			<version>4.5.0-beta.1</version>
+		</dependency>
 
         <!-- Testing -->
         <dependency>

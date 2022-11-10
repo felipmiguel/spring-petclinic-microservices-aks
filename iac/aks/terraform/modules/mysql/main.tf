@@ -68,6 +68,29 @@ resource "azurerm_mysql_flexible_server_firewall_rule" "database" {
   end_ip_address      = "0.0.0.0"
 }
 
+resource "azurecaf_name" "mysql_firewall_rule_allow_iac_machine" {
+  name          = var.application_name
+  resource_type = "azurerm_mysql_firewall_rule"
+  suffixes      = [var.environment, "iac"]
+}
+
+data "http" "myip" {
+  url = "http://whatismyip.akamai.com"
+}
+
+locals {
+  myip = chomp(data.http.myip.body)
+}
+
+# This rule is to enable current user
+resource "azurerm_mysql_flexible_server_firewall_rule" "rule_allow_iac_machine" {
+  name                = azurecaf_name.mysql_firewall_rule_allow_iac_machine.result
+  resource_group_name = var.resource_group
+  server_name         = azurerm_mysql_flexible_server.database.name
+  start_ip_address    = local.myip
+  end_ip_address      = local.myip
+}
+
 resource "azurecaf_name" "mysql_aadmin" {
   name          = var.application_name
   resource_type = "azurerm_user_assigned_identity"
@@ -130,9 +153,6 @@ resource "azapi_resource" "mysql_aad_admin" {
       login              = data.azuread_user.aad_admin.user_principal_name
       sid                = data.azuread_user.aad_admin.object_id
       tenantId           = data.azurerm_client_config.current_client.tenant_id
-      # login    = "fmiguel@microsoft.com"
-      # sid      = "909ce548-817f-41b0-bf5e-0c9295897bf7"
-      # tenantId = "72f988bf-86f1-41af-91ab-2d7cd011db47"
     }
   })
   timeouts {

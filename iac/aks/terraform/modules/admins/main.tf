@@ -2,7 +2,7 @@ data "azuread_client_config" "current" {}
 
 
 locals {
-  admin_group_name= "gr-${var.application_name}-admins-${var.environment}"
+  admin_group_name = "gr-${var.application_name}-admins-${var.environment}"
 }
 
 resource "azuread_group" "azuread_group" {
@@ -13,4 +13,10 @@ resource "azuread_group" "azuread_group" {
   types            = ["Unified"]
 
   owners = distinct(concat([data.azuread_client_config.current.object_id], var.admin_ids))
+}
+
+resource "azuread_group_member" "group_members" {
+  count            = length(var.admin_ids)
+  group_object_id  = azuread_group.azuread_group.object_id
+  member_object_id = var.admin_ids[count.index]
 }

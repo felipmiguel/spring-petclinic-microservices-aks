@@ -28,3 +28,19 @@ variable "namespace" {
   description = "Namespace of the application"
   type        = string
 }
+
+variable "image" {
+  description = "Container image of the application"
+  type        = string
+}
+
+variable "profile" {
+  description = "Spring profile"
+  type        = string
+  default     = null
+}
+
+variable "container_port" {
+  description = "The port the container listens on"
+  type        = number
+}

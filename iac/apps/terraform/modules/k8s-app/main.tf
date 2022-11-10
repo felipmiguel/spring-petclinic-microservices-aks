@@ -5,9 +5,21 @@ terraform {
       version = "1.2.16"
     }
     azapi = {
-      source  = "azure/azapi"
+      source = "azure/azapi"
     }
   }
+}
+
+
+locals {
+  database_username          = "aad-${random_string.username.result}"
+  database_url_with_username = "${var.database_url}&user=${local.database_username}@${var.database_server_name}"
+}
+
+resource "random_string" "username" {
+  length = 20
+  special = false
+  upper = false  
 }
 
 resource "azurecaf_name" "app_umi" {
@@ -20,6 +32,17 @@ resource "azurerm_user_assigned_identity" "app_umi" {
   name                = azurecaf_name.app_umi.result
   resource_group_name = var.resource_group
   location            = var.location
+
+  provisioner "local-exec" {
+    command = "./scripts/create-db-user.sh ${var.database_server_fqdn} ${local.database_username} ${azurerm_user_assigned_identity.app_umi.client_id} ${var.database_name}"
+    working_dir = path.module
+    when = create
+  }
+
+  # provisioner "local-exec" {
+  #   command = "./scripts/delete-db-user.sh ${var.server_fqdn} ${local.database_username} ${var.database_name}"
+  #   when = destroy
+  # }
 }
 
 resource "kubernetes_service_account" "service_account" {
@@ -36,16 +59,16 @@ resource "kubernetes_service_account" "service_account" {
 }
 
 resource "azapi_resource" "federated_credential" {
-  type = "Microsoft.ManagedIdentity/userAssignedIdentities/federatedIdentityCredentials@2022-01-31-preview"
-  name = "fc-${var.appname}"
+  type      = "Microsoft.ManagedIdentity/userAssignedIdentities/federatedIdentityCredentials@2022-01-31-preview"
+  name      = "fc-${var.appname}"
   parent_id = azurerm_user_assigned_identity.app_umi.id
   body = jsonencode({
     properties = {
-        audiences = ["api://AzureADTokenExchange"]
-        issuer = var.aks_oidc_issuer_url
-        subject = "system:serviceaccount:${var.namespace}:${var.appname}"        
+      audiences = ["api://AzureADTokenExchange"]
+      issuer    = var.aks_oidc_issuer_url
+      subject   = "system:serviceaccount:${var.namespace}:${var.appname}"
     }
-  })  
+  })
 }
 
 # resource "azuread_application_federated_identity_credential" "federated_credential" {
@@ -55,6 +78,30 @@ resource "azapi_resource" "federated_credential" {
 #   issuer                = var.aks_oidc_issuer_url
 #   subject               = "system:serviceaccount:${var.namespace}:${var.appname}"
 # }
+
+
+resource "kubernetes_service" "app_service" {
+  metadata {
+    name      = var.appname
+    namespace = var.namespace
+    labels = {
+      app = var.appname
+    }
+  }
+  spec {
+    selector = {
+      app = var.appname
+    }
+    port {
+      name        = "endpoint"
+      port        = var.container_port
+      target_port = var.container_port
+      protocol    = "TCP"
+    }
+    type = "ClusterIP"
+  }
+}
+
 
 resource "kubernetes_deployment" "app_deployment" {
   metadata {
@@ -73,33 +120,48 @@ resource "kubernetes_deployment" "app_deployment" {
         labels = {
           app = var.appname
         }
+        namespace = var.namespace
       }
       spec {
         service_account_name = kubernetes_service_account.service_account.metadata[0].name
         container {
-          name  = var.appname
-          image = var.image
-          
+          name              = var.appname
+          image             = var.image
+          image_pull_policy = "Always"
+
+          port {
+            name           = "endpoint"
+            container_port = var.container_port
+          }
+          security_context {
+            privileged = false
+          }
+
+          env {
+            name  = "SPRING_PROFILES_ACTIVE"
+            value = var.profile
+          }
+
           env {
             name  = "SPRING_DATASOURCE_AZURE_PASSWORDLESSENABLED"
             value = "true"
           }
           env {
             name  = "SPRING_DATASOURCE_AZURE_URL"
-            value = var.database_url
+            value = local.database_url_with_username
           }
           liveness_probe {
             http_get {
               path = "/actuator/health"
-              port = "http"
+              port = var.container_port
             }
             initial_delay_seconds = 30
             period_seconds        = 30
           }
         }
       }
-      
+
     }
   }
-  
+
 }

@@ -16,7 +16,7 @@
     </parent>
 
     <properties>
-        <docker.exposed.port>8081</docker.exposed.port>
+        <!-- <docker.exposed.port>8081</docker.exposed.port> -->
         <docker.image.dockerfile.dir>${basedir}/../docker</docker.image.dockerfile.dir>
     </properties>
 
@@ -63,6 +63,13 @@
             <artifactId>spring-cloud-sleuth-zipkin</artifactId>
         </dependency>
         -->
+
+        <!--Passwordless spring starter for mysql -->
+		<dependency>
+			<groupId>com.azure.spring</groupId>
+			<artifactId>spring-cloud-azure-starter-jdbc-mysql</artifactId>
+			<version>4.5.0-beta.1</version>
+		</dependency>
 
         <!-- Third parties -->
         <dependency>

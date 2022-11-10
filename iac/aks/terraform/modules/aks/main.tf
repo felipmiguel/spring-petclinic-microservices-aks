@@ -20,31 +20,34 @@ resource "azurerm_kubernetes_cluster" "aks" {
   dns_prefix          = var.dns_prefix
 
   default_node_pool {
-    name           = "defaultpool"
-    node_count     = 2
-    vm_size        = "Standard_B2s"
+    name       = "defaultpool"
+    node_count = 2
+    vm_size    = "Standard_B2s"
   }
+
+  local_account_disabled = true
+  oidc_issuer_enabled = true
 
   identity {
     type = "SystemAssigned"
   }
 
+  
   azure_active_directory_role_based_access_control {
     managed = true
     admin_group_object_ids = [
       var.aks_rbac_admin_group_object_id,
     ]
-    azure_rbac_enabled = true
-  }
-
-  oidc_issuer_enabled = true
+    azure_rbac_enabled = false
+  }  
 }
 
 # grant permission to aks to pull images from acr
 resource "azurerm_role_assignment" "acrpull_role" {
+  count = length(azurerm_kubernetes_cluster.aks.kubelet_identity)
   scope                = var.acr_id
   role_definition_name = "AcrPull"
-  principal_id         = azurerm_kubernetes_cluster.aks.identity[0].principal_id
+  principal_id         = azurerm_kubernetes_cluster.aks.kubelet_identity[count.index].object_id  
 }
 
 # grant permission to admin group to manage aks

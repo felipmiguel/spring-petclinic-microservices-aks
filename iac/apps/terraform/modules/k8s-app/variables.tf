@@ -34,7 +34,36 @@ variable "aks_oidc_issuer_url" {
   type        = string
 }
 
-variable "database_url" {
-  description = "Database JDBC URL"
+variable "image" {
+  description = "The image to deploy"
   type        = string
+}
+
+variable "database_url" {
+  description = "The database URL"
+  type        = string
+}
+
+variable "database_server_name" {
+  description = "The database server hostname"
+  type        = string
+}
+variable "database_server_fqdn" {
+  description = "The database FQDN"
+  type        = string
+}
+
+variable "database_name" {
+  description = "The database name"
+  type        = string
+}
+
+variable "profile" {
+  description = "Spring profile"
+  type        = string
+}
+
+variable "container_port" {
+  description = "The port the container listens on"
+  type        = number
 }

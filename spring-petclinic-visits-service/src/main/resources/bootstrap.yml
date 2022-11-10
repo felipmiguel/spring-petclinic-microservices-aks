@@ -12,3 +12,11 @@ spring:
   cloud:
     config:
       uri: http://config-server:8888
+---
+spring:
+  config:
+    activate:
+      on-profile: k8s
+  cloud:
+    config:
+      uri: http://spring-petclinic-config-server:8080

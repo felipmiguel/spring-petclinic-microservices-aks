@@ -6,9 +6,9 @@ output "cluster_name" {
     value = azurerm_kubernetes_cluster.aks.name
 }
 
-# output "cluster_fqdn" {
-#     value = azurerm_kubernetes_cluster.aks.fqdn
-# }
+output "cluster_fqdn" {
+    value = azurerm_kubernetes_cluster.aks.fqdn
+}
 
 # output "client_certificate" {
 #     value = azurerm_kubernetes_cluster.aks.kube_admin_config.0.client_certificate  
