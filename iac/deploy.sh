@@ -6,9 +6,9 @@ cat <<EOF > terraform.tfvars
 admin_ids = ["$CURRENT_USER_OID"]
 mysql_aad_admin = "$CURRENT_USER_SPN"
 EOF
-terraform fmt
-terraform init
-terraform apply -auto-approve
+# terraform fmt
+# terraform init
+# terraform apply -auto-approve
 
 ACR_NAME=$(terraform output -raw acr_name)
 RESOURCE_GROUP=$(terraform output -raw resource_group)
@@ -31,10 +31,10 @@ cd ..
 # cd spring-petclinic-config-server
 # mvn package -PbuildAcr -DskipTests -DRESOURCE_GROUP=${RESOURCE_GROUP} -DACR_NAME=${ACR_NAME}
 # cd ..
-# cd spring-petclinic-customers-service
+# cd spring-petclinic-discovery-server
 # mvn package -PbuildAcr -DskipTests -DRESOURCE_GROUP=${RESOURCE_GROUP} -DACR_NAME=${ACR_NAME}
 # cd ..
-# cd spring-petclinic-discovery-server
+# cd spring-petclinic-customers-service
 # mvn package -PbuildAcr -DskipTests -DRESOURCE_GROUP=${RESOURCE_GROUP} -DACR_NAME=${ACR_NAME}
 # cd ..
 # cd spring-petclinic-vets-service
@@ -43,6 +43,10 @@ cd ..
 # cd spring-petclinic-visits-service
 # mvn package -PbuildAcr -DskipTests -DRESOURCE_GROUP=${RESOURCE_GROUP} -DACR_NAME=${ACR_NAME}
 # cd ..
+
+cd demo-identity-service
+mvn package -PbuildAcr -DskipTests -DRESOURCE_GROUP=${RESOURCE_GROUP} -DACR_NAME=${ACR_NAME}
+cd ..
 
 cd iac
 cd apps/terraform

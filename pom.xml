@@ -16,6 +16,7 @@
     <packaging>pom</packaging>
 
     <modules>
+        <module>demo-identity-service</module>
         <module>spring-petclinic-admin-server</module>
         <module>spring-petclinic-customers-service</module>
         <module>spring-petclinic-vets-service</module>

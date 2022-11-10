@@ -13,7 +13,7 @@ terraform {
 
 locals {
   database_username          = "aad-${random_string.username.result}"
-  database_url_with_username = "${var.database_url}&user=${local.database_username}@${var.database_server_name}"
+  database_url_with_username = "${var.database_url}&user=${local.database_username}"
 }
 
 resource "random_string" "username" {
@@ -147,7 +147,7 @@ resource "kubernetes_deployment" "app_deployment" {
             value = "true"
           }
           env {
-            name  = "SPRING_DATASOURCE_AZURE_URL"
+            name  = "SPRING_DATASOURCE_URL"
             value = local.database_url_with_username
           }
           liveness_probe {

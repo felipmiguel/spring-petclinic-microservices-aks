@@ -58,7 +58,7 @@ variable "database_server_fqdn" {
 }
 
 variable "database_server_name" {
-  description = "The host name of the MySQL server"  
+  description = "The host name of the MySQL server"
 }
 
 variable "database_name" {

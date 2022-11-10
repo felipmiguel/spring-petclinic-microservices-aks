@@ -137,6 +137,28 @@ module "k8s_apps" {
   ]
 }
 
+module "identity_demo_app" {
+  source               = "./modules/k8s-app"
+  resource_group       = var.resource_group
+  application_name     = var.application_name
+  environment          = local.environment
+  location             = var.location
+  appname              = "demo-identity-service"
+  namespace            = kubernetes_namespace.app_namepsace.metadata[0].name
+  aks_oidc_issuer_url  = data.azurerm_kubernetes_cluster.aks.oidc_issuer_url
+  database_url         = var.database_url
+  image                = "${var.registry_url}/demo-identity-service:${var.apps_version}"
+  profile              = var.profile
+  container_port       = var.container_port
+  database_name        = var.database_name
+  database_server_fqdn = var.database_server_fqdn
+  database_server_name = var.database_server_name
+  depends_on = [
+    module.config-server,
+    module.config-discovery
+  ]
+}
+
 module "k8s_svcs" {
   count            = length(var.cloud_services)
   source           = "./modules/k8s-svc"

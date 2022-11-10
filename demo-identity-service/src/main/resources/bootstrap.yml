@@ -1,9 +1,11 @@
+server:
+  port: 8080
 spring:
   cloud:
     config:
-      uri: http://localhost:8080
+      uri: http://localhost:8888
   application:
-    name: customers-service
+    name: identity-service
 ---
 spring:
   config:
