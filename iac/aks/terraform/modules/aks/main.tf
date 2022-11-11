@@ -27,6 +27,7 @@ resource "azurerm_kubernetes_cluster" "aks" {
 
   local_account_disabled = true
   oidc_issuer_enabled = true
+  workload_identity_enabled = true
 
   identity {
     type = "SystemAssigned"
@@ -44,10 +45,9 @@ resource "azurerm_kubernetes_cluster" "aks" {
 
 # grant permission to aks to pull images from acr
 resource "azurerm_role_assignment" "acrpull_role" {
-  count = length(azurerm_kubernetes_cluster.aks.kubelet_identity)
   scope                = var.acr_id
   role_definition_name = "AcrPull"
-  principal_id         = azurerm_kubernetes_cluster.aks.kubelet_identity[count.index].object_id  
+  principal_id         = azurerm_kubernetes_cluster.aks.kubelet_identity.0.object_id  
 }
 
 # grant permission to admin group to manage aks

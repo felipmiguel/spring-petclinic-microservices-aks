@@ -79,7 +79,7 @@ data "http" "myip" {
 }
 
 locals {
-  myip = chomp(data.http.myip.body)
+  myip = chomp(data.http.myip.response_body)
 }
 
 # This rule is to enable current user

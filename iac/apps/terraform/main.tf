@@ -18,6 +18,9 @@ terraform {
       source  = "hashicorp/kubernetes"
       version = "2.15.0"
     }
+    helm = {
+      source = "hashicorp/helm"
+    }
   }
   backend "azurerm" {
     resource_group_name  = "rg-terraformstate"
@@ -59,6 +62,33 @@ provider "kubernetes" {
   }
 }
 
+provider "helm" {
+  kubernetes {
+    host                   = data.azurerm_kubernetes_cluster.aks.kube_config.0.host
+    cluster_ca_certificate = base64decode(data.azurerm_kubernetes_cluster.aks.kube_config.0.cluster_ca_certificate)
+    exec {
+      api_version = "client.authentication.k8s.io/v1beta1"
+      command     = "kubelogin"
+      args = [
+        "get-token",
+        "--login",
+        "azurecli", # spn if you want to use service principal, but requires use of env vars AAD_SERVICE_PRINCIPAL_CLIENT_ID and AAD_SERVICE_PRINCIPAL_CLIENT_SECRET
+        "--environment",
+        "AzurePublicCloud",
+        "--tenant-id",
+        data.azurerm_client_config.current.tenant_id,
+        "--server-id",
+        "6dae42f8-4368-4678-94ff-3960e28e3630",
+        "|",
+        "jq",
+        ".status.token"
+      ]
+    }
+
+  }
+
+}
+
 provider "azapi" {
 }
 
@@ -69,7 +99,7 @@ provider "azurerm" {
 provider "azuread" {
 }
 
-resource "kubernetes_namespace" "app_namepsace" {
+resource "kubernetes_namespace" "app_namespace" {
   metadata {
     name = var.apps_namespace
     labels = {
@@ -81,15 +111,20 @@ resource "kubernetes_namespace" "app_namepsace" {
 
 locals {
   // If an environment is set up (dev, test, prod...), it is used in the application name
-  environment = var.environment == "" ? "dev" : var.environment
+  environment         = var.environment == "" ? "dev" : var.environment
+  api_gateway_service = "spring-petclinic-api-gateway"
+  config_service      = "spring-petclinic-config-server"
+  discovery_service   = "spring-petclinic-discovery-server"
+  admin_service       = "spring-petclinic-admin-server"
+
 }
 
 # first deploy config server
-module "config-server" {
+module "config_server" {
   source           = "./modules/k8s-svc"
-  appname          = "spring-petclinic-config-server"
-  namespace        = kubernetes_namespace.app_namepsace.metadata[0].name
-  image            = "${var.registry_url}/spring-petclinic-config-server:${var.apps_version}"
+  appname          = local.config_service
+  namespace        = kubernetes_namespace.app_namespace.metadata[0].name
+  image            = "${var.registry_url}/${local.config_service}:${var.apps_version}"
   resource_group   = var.resource_group
   application_name = var.application_name
   environment      = var.environment
@@ -98,11 +133,11 @@ module "config-server" {
 }
 
 # and discovery server
-module "config-discovery" {
+module "discovery_server" {
   source           = "./modules/k8s-svc"
-  appname          = "spring-petclinic-discovery-server"
-  namespace        = kubernetes_namespace.app_namepsace.metadata[0].name
-  image            = "${var.registry_url}/spring-petclinic-discovery-server:${var.apps_version}"
+  appname          = local.discovery_service
+  namespace        = kubernetes_namespace.app_namespace.metadata[0].name
+  image            = "${var.registry_url}/${local.config_service}:${var.apps_version}"
   resource_group   = var.resource_group
   application_name = var.application_name
   environment      = var.environment
@@ -110,7 +145,24 @@ module "config-discovery" {
   profile          = var.profile
   container_port   = var.container_port
   depends_on = [
-    module.config-server
+    module.config_server
+  ]
+}
+
+# and api-gateway server
+module "api_gateway_server" {
+  source           = "./modules/k8s-svc"
+  appname          = local.api_gateway_service
+  namespace        = kubernetes_namespace.app_namespace.metadata[0].name
+  image            = "${var.registry_url}/${local.api_gateway_service}:${var.apps_version}"
+  resource_group   = var.resource_group
+  application_name = var.application_name
+  environment      = var.environment
+  location         = var.location
+  profile          = var.profile
+  container_port   = var.container_port
+  depends_on = [
+    module.config_server
   ]
 }
 
@@ -122,7 +174,7 @@ module "k8s_apps" {
   environment          = local.environment
   location             = var.location
   appname              = var.apps[count.index]
-  namespace            = kubernetes_namespace.app_namepsace.metadata[0].name
+  namespace            = kubernetes_namespace.app_namespace.metadata[0].name
   aks_oidc_issuer_url  = data.azurerm_kubernetes_cluster.aks.oidc_issuer_url
   database_url         = var.database_url
   image                = "${var.registry_url}/${var.apps[count.index]}:${var.apps_version}"
@@ -132,8 +184,8 @@ module "k8s_apps" {
   database_server_fqdn = var.database_server_fqdn
   database_server_name = var.database_server_name
   depends_on = [
-    module.config-server,
-    module.config-discovery
+    module.config_server,
+    module.discovery_server
   ]
 }
 
@@ -144,7 +196,7 @@ module "identity_demo_app" {
   environment          = local.environment
   location             = var.location
   appname              = "demo-identity-service"
-  namespace            = kubernetes_namespace.app_namepsace.metadata[0].name
+  namespace            = kubernetes_namespace.app_namespace.metadata[0].name
   aks_oidc_issuer_url  = data.azurerm_kubernetes_cluster.aks.oidc_issuer_url
   database_url         = var.database_url
   image                = "${var.registry_url}/demo-identity-service:${var.apps_version}"
@@ -153,9 +205,12 @@ module "identity_demo_app" {
   database_name        = var.database_name
   database_server_fqdn = var.database_server_fqdn
   database_server_name = var.database_server_name
+  env_vars = {
+    "SERVER_PORT" = var.container_port
+  }
   depends_on = [
-    module.config-server,
-    module.config-discovery
+    module.config_server,
+    module.discovery_server
   ]
 }
 
@@ -167,12 +222,32 @@ module "k8s_svcs" {
   environment      = local.environment
   location         = var.location
   appname          = var.cloud_services[count.index]
-  namespace        = kubernetes_namespace.app_namepsace.metadata[0].name
+  namespace        = kubernetes_namespace.app_namespace.metadata[0].name
   image            = "${var.registry_url}/${var.cloud_services[count.index]}:${var.apps_version}"
   profile          = var.profile
   container_port   = var.container_port
   depends_on = [
-    module.config-server,
-    module.config-discovery
+    module.config_server,
+    module.discovery_server
   ]
 }
+
+module "ingress" {
+  source         = "./modules/ingress"
+  namespace      = kubernetes_namespace.app_namespace.metadata[0].name
+  ingress_routes = []
+  # ingress_routes = [{
+  #   name    = local.api_gateway_service
+  #   path    = "clinic/*"
+  #   service = local.api_gateway_service
+  #   port    = var.container_port
+  #   }, {
+  #   name    = local.admin_service
+  #   path    = "admin/*"
+  #   service = local.admin_service
+  #   port    = var.container_port
+  # }]
+
+
+}
+

@@ -13,7 +13,7 @@ terraform {
 
 locals {
   database_username          = "aad-${random_string.username.result}"
-  database_url_with_username = "${var.database_url}&user=${local.database_username}"
+  database_url_with_username = "${var.database_url}&requireSSL=true&user=${local.database_username}&authenticationPlugins=com.azure.identity.providers.mysql.AzureIdentityMysqlAuthenticationPlugin"
 }
 
 resource "random_string" "username" {
@@ -142,14 +142,21 @@ resource "kubernetes_deployment" "app_deployment" {
             value = var.profile
           }
 
-          env {
-            name  = "SPRING_DATASOURCE_AZURE_PASSWORDLESSENABLED"
-            value = "true"
-          }
+          # env {
+          #   name  = "SPRING_DATASOURCE_AZURE_PASSWORDLESSENABLED"
+          #   value = "true"
+          # }
           env {
             name  = "SPRING_DATASOURCE_URL"
             value = local.database_url_with_username
           }
+          # dynamic "env" {
+          #   for_each = var.env_vars
+          #   content {
+          #     name  = var.env_vars[env.key].name
+          #     value = var.env_vars[env.key].value
+          #   }
+          # }
           liveness_probe {
             http_get {
               path = "/actuator/health"

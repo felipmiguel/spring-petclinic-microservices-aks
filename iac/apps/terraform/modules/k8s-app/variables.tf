@@ -67,3 +67,9 @@ variable "container_port" {
   description = "The port the container listens on"
   type        = number
 }
+
+variable "env_vars" {
+  description = "Environment variables"
+  type        = map(string)
+  default     = {}
+}

@@ -15,6 +15,7 @@
  */
 package org.springframework.samples.petclinic.visits.web;
 
+import java.util.ArrayList;
 import java.util.List;
 import javax.validation.Valid;
 
@@ -32,6 +33,10 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
+
+import com.azure.core.credential.TokenRequestContext;
+import com.azure.identity.DefaultAzureCredential;
+import com.azure.identity.DefaultAzureCredentialBuilder;
 
 /**
  * @author Juergen Hoeller
@@ -68,6 +73,20 @@ class VisitResource {
    public Visits visitsMultiGet(@RequestParam("petId") List<Integer> petIds) {
         final List<Visit> byPetIdIn = visitRepository.findByPetIdIn(petIds);
         return new Visits(byPetIdIn);
+    }
+
+    @GetMapping("token")
+    public String getAccessTokenRdbms() {
+        DefaultAzureCredentialBuilder builder = new DefaultAzureCredentialBuilder();
+        // builder.managedIdentityClientId("19470636-66e3-4656-9627-be31835674bc");
+
+        DefaultAzureCredential credential = builder.build();
+
+        TokenRequestContext request = new TokenRequestContext();
+        List<String> scopes =new ArrayList<>();
+        scopes.add("https://ossrdbms-aad.database.windows.net");
+        request.setScopes(scopes);
+        return credential.getToken(request).block().getToken();
     }
 
     @Value

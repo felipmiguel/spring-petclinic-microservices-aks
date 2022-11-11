@@ -34,10 +34,7 @@ variable "apps" {
 variable "cloud_services" {
   type        = list(string)
   description = "List of Spring Cloud Services to deploy"
-  default = [
-    "spring-petclinic-admin-server",
-    "spring-petclinic-api-gateway"
-  ]
+  default     = []
 }
 
 variable "apps_namespace" {
