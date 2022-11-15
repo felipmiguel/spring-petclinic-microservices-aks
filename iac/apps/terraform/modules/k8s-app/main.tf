@@ -150,6 +150,10 @@ resource "kubernetes_deployment_v1" "app_deployment" {
             name  = "SPRING_DATASOURCE_URL"
             value = local.database_url_with_username
           }
+          env {
+            name  = "AZURE_MSSQL_CONNECTIONSTRING"
+            value = "Server=tcp:mssql-passwordless.database.windows.net;Database=checklist;Authentication=Active Directory Default;TrustServerCertificate=True;Min Pool Size=20"
+          }
           # dynamic "env" {
           #   for_each = var.env_vars
           #   content {

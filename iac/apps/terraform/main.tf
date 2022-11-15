@@ -118,6 +118,7 @@ locals {
   admin_service       = "spring-petclinic-admin-server"
   dotnet_service      = "sample-workload-identity"
   java_service        = "demo-identity-service"
+  mssql_service       = "mssql-sample"
 }
 
 # first deploy config server
@@ -238,6 +239,30 @@ module "sample_workload_app" {
   ]
 }
 
+
+module "mssql_workload_app" {
+  source               = "./modules/k8s-app"
+  resource_group       = var.resource_group
+  application_name     = var.application_name
+  environment          = local.environment
+  location             = var.location
+  appname              = local.mssql_service
+  namespace            = kubernetes_namespace.app_namespace.metadata[0].name
+  aks_oidc_issuer_url  = data.azurerm_kubernetes_cluster.aks.oidc_issuer_url
+  database_url         = var.database_url
+  image                = "${var.registry_url}/${local.mssql_service}:${var.apps_version}"
+  profile              = var.profile
+  container_port       = 80
+  database_name        = var.database_name
+  database_server_fqdn = var.database_server_fqdn
+  database_server_name = var.database_server_name
+  health_check_path    = "/healthz"
+  depends_on = [
+    module.config_server,
+    module.discovery_server
+  ]
+}
+
 module "k8s_svcs" {
   count            = length(var.cloud_services)
   source           = "./modules/k8s-svc"
@@ -280,6 +305,11 @@ module "ingress" {
     path    = "/java(/|$)(.*)"
     service = local.java_service
     port    = var.container_port
+  }, {
+    name    = local.mssql_service
+    path    = "/mssql(/|$)(.*)"
+    service = local.mssql_service
+    port    = 80
   }]
 }
 
