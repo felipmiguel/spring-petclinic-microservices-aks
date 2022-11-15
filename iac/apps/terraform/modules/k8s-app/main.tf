@@ -17,9 +17,9 @@ locals {
 }
 
 resource "random_string" "username" {
-  length = 20
+  length  = 20
   special = false
-  upper = false  
+  upper   = false
 }
 
 resource "azurecaf_name" "app_umi" {
@@ -34,9 +34,9 @@ resource "azurerm_user_assigned_identity" "app_umi" {
   location            = var.location
 
   provisioner "local-exec" {
-    command = "./scripts/create-db-user.sh ${var.database_server_fqdn} ${local.database_username} ${azurerm_user_assigned_identity.app_umi.client_id} ${var.database_name}"
+    command     = "./scripts/create-db-user.sh ${var.database_server_fqdn} ${local.database_username} ${azurerm_user_assigned_identity.app_umi.client_id} ${var.database_name}"
     working_dir = path.module
-    when = create
+    when        = create
   }
 
   # provisioner "local-exec" {
@@ -45,7 +45,7 @@ resource "azurerm_user_assigned_identity" "app_umi" {
   # }
 }
 
-resource "kubernetes_service_account" "service_account" {
+resource "kubernetes_service_account_v1" "service_account" {
   metadata {
     name      = var.appname
     namespace = var.namespace
@@ -80,7 +80,7 @@ resource "azapi_resource" "federated_credential" {
 # }
 
 
-resource "kubernetes_service" "app_service" {
+resource "kubernetes_service_v1" "app_service" {
   metadata {
     name      = var.appname
     namespace = var.namespace
@@ -93,17 +93,17 @@ resource "kubernetes_service" "app_service" {
       app = var.appname
     }
     port {
-      name        = "endpoint"
       port        = var.container_port
       target_port = var.container_port
       protocol    = "TCP"
     }
     type = "ClusterIP"
+
   }
 }
 
 
-resource "kubernetes_deployment" "app_deployment" {
+resource "kubernetes_deployment_v1" "app_deployment" {
   metadata {
     name      = var.appname
     namespace = var.namespace
@@ -123,7 +123,7 @@ resource "kubernetes_deployment" "app_deployment" {
         namespace = var.namespace
       }
       spec {
-        service_account_name = kubernetes_service_account.service_account.metadata[0].name
+        service_account_name = kubernetes_service_account_v1.service_account.metadata[0].name
         container {
           name              = var.appname
           image             = var.image
@@ -159,7 +159,7 @@ resource "kubernetes_deployment" "app_deployment" {
           # }
           liveness_probe {
             http_get {
-              path = "/actuator/health"
+              path = var.health_check_path
               port = var.container_port
             }
             initial_delay_seconds = 30

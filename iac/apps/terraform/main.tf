@@ -116,7 +116,8 @@ locals {
   config_service      = "spring-petclinic-config-server"
   discovery_service   = "spring-petclinic-discovery-server"
   admin_service       = "spring-petclinic-admin-server"
-
+  dotnet_service      = "sample-workload-identity"
+  java_service        = "demo-identity-service"
 }
 
 # first deploy config server
@@ -195,11 +196,11 @@ module "identity_demo_app" {
   application_name     = var.application_name
   environment          = local.environment
   location             = var.location
-  appname              = "demo-identity-service"
+  appname              = local.java_service
   namespace            = kubernetes_namespace.app_namespace.metadata[0].name
   aks_oidc_issuer_url  = data.azurerm_kubernetes_cluster.aks.oidc_issuer_url
   database_url         = var.database_url
-  image                = "${var.registry_url}/demo-identity-service:${var.apps_version}"
+  image                = "${var.registry_url}/${local.java_service}:${var.apps_version}"
   profile              = var.profile
   container_port       = var.container_port
   database_name        = var.database_name
@@ -208,6 +209,29 @@ module "identity_demo_app" {
   env_vars = {
     "SERVER_PORT" = var.container_port
   }
+  depends_on = [
+    module.config_server,
+    module.discovery_server
+  ]
+}
+
+module "sample_workload_app" {
+  source               = "./modules/k8s-app"
+  resource_group       = var.resource_group
+  application_name     = var.application_name
+  environment          = local.environment
+  location             = var.location
+  appname              = local.dotnet_service
+  namespace            = kubernetes_namespace.app_namespace.metadata[0].name
+  aks_oidc_issuer_url  = data.azurerm_kubernetes_cluster.aks.oidc_issuer_url
+  database_url         = var.database_url
+  image                = "${var.registry_url}/${local.dotnet_service}:${var.apps_version}"
+  profile              = var.profile
+  container_port       = 80
+  database_name        = var.database_name
+  database_server_fqdn = var.database_server_fqdn
+  database_server_name = var.database_server_name
+  health_check_path    = "/healthz"
   depends_on = [
     module.config_server,
     module.discovery_server
@@ -233,21 +257,29 @@ module "k8s_svcs" {
 }
 
 module "ingress" {
-  source         = "./modules/ingress"
-  namespace      = kubernetes_namespace.app_namespace.metadata[0].name
-  ingress_routes = []
-  # ingress_routes = [{
-  #   name    = local.api_gateway_service
-  #   path    = "clinic/*"
-  #   service = local.api_gateway_service
-  #   port    = var.container_port
-  #   }, {
-  #   name    = local.admin_service
-  #   path    = "admin/*"
-  #   service = local.admin_service
-  #   port    = var.container_port
-  # }]
-
-
+  source    = "./modules/ingress"
+  namespace = kubernetes_namespace.app_namespace.metadata[0].name
+  # ingress_routes = []
+  ingress_routes = [{
+    name    = local.api_gateway_service
+    path    = "/clinic(/|$)(.*)"
+    service = local.api_gateway_service
+    port    = var.container_port
+    }, {
+    name    = local.admin_service
+    path    = "/admin(/|$)(.*)"
+    service = local.admin_service
+    port    = var.container_port
+    }, {
+    name    = local.dotnet_service
+    path    = "/dotnet(/|$)(.*)"
+    service = local.dotnet_service
+    port    = 80
+    }, {
+    name    = local.java_service
+    path    = "/java(/|$)(.*)"
+    service = local.java_service
+    port    = var.container_port
+  }]
 }
 

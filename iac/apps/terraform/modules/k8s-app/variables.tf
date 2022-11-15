@@ -73,3 +73,9 @@ variable "env_vars" {
   type        = map(string)
   default     = {}
 }
+
+variable "health_check_path" {
+  description = "The path to use for health checks"
+  type        = string
+  default     = "/actuator/health"
+}

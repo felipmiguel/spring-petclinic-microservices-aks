@@ -14,7 +14,7 @@ resource "helm_release" "nginx_ingress" {
 
   set {
     name  = "service.type"
-    value = "ClusterIP"
+    value = "LoadBalancer"
   }
   # set {
   #   name  = "controller.service.annotations.\"service.beta.kubernetes.io/azure-load-balancer-health-probe-request-path\""
@@ -24,52 +24,52 @@ resource "helm_release" "nginx_ingress" {
   create_namespace = true
 }
 
-resource "kubernetes_service" "ingress_service" {
-  metadata {
-    name      = "nginx-ingress-controller"
-    namespace = var.namespace
-  }
+# resource "kubernetes_service" "ingress_service" {
+#   metadata {
+#     name      = "nginx-ingress-controller"
+#     namespace = var.namespace
+#   }
 
-  spec {
+#   spec {
 
-    port {
-      name = "http"
-      port = 80
-      target_port = 80
-    }
+#     port {
+#       name = "http"
+#       port = 80
+#       target_port = 80
+#     }
 
-    type = "NodePort"
-  }
+#     type = "NodePort"
+#   }
 
-  depends_on = [
-    helm_release.nginx_ingress
-  ]
+#   depends_on = [
+#     helm_release.nginx_ingress
+#   ]
 
-}
+# }
 
-resource "kubernetes_ingress" "service_routes" {
-  count = length(var.ingress_routes)
-  wait_for_load_balancer = true
-  metadata {
-    name =  var.ingress_routes[count.index].name
-    annotations = {
-      "kubernetes.io/ingress.class" = "nginx"
-    }
-  }
-  spec {
-    rule {
-      http {
-        path {
-          path = var.ingress_routes[count.index].path
-          backend {
-            service_name = var.ingress_routes[count.index].name
-            service_port = var.ingress_routes[count.index].port
-          }
-        }
-      }
-    }
-  }
-}
+# resource "kubernetes_ingress_v1" "service_routes" {
+#   count = length(var.ingress_routes)
+#   wait_for_load_balancer = true
+#   metadata {
+#     name =  var.ingress_routes[count.index].name
+#     annotations = {
+#       "kubernetes.io/ingress.class" = "nginx"
+#     }
+#   }
+#   spec {
+#     rule {
+#       http {
+#         path {
+#           path = var.ingress_routes[count.index].path
+#           backend {
+#             service_name = var.ingress_routes[count.index].name
+#             service_port = var.ingress_routes[count.index].port
+#           }
+#         }
+#       }
+#     }
+#   }
+# }
 
 # resource "kubernetes_ingress_class" "nginx_ingress" {
 #   metadata {
@@ -86,35 +86,38 @@ resource "kubernetes_ingress" "service_routes" {
 #   }
 # }
 
-# resource "kubernetes_ingress" "ingress_routes" {
-#   count = length(var.ingress_routes)
-#   metadata {
-#     name      = var.ingress_routes[count.index].name
-#     namespace = var.namespace
-#     annotations = {
-#       "nginx.ingress.kubernetes.io/ssl-redirect" : "false"
-#       "nginx.ingress.kubernetes.io/use-regex" : "true"
-#       "nginx.ingress.kubernetes.io/rewrite-target" : "/$2"
-#     }
-#   }
-#   spec {
-#     # ingress_class_name = "nginx"
-#     rule {
-#       http {
-#         path {
-#           path = var.ingress_routes[count.index].path
-#           backend {
-#             service_name = var.ingress_routes[count.index].service
-#             service_port = var.ingress_routes[count.index].port
-#           }
-#         }
-#       }
-#     }
-#   }
+resource "kubernetes_ingress_v1" "ingress_routes" {
+  count = length(var.ingress_routes)
+  metadata {
+    name      = var.ingress_routes[count.index].name
+    namespace = var.namespace
+    annotations = {
+      "nginx.ingress.kubernetes.io/ssl-redirect" : "false"
+      "nginx.ingress.kubernetes.io/use-regex" : "true"
+      "nginx.ingress.kubernetes.io/rewrite-target" : "/$2"
+    }
+  }
+  spec {
+    ingress_class_name = "nginx"
+    rule {
+      http {
+        path {
+          path = var.ingress_routes[count.index].path
+          backend {
+            service {
+              name = var.ingress_routes[count.index].service
+              port {
+                number = var.ingress_routes[count.index].port
+              }
+            }
+          }
+        }
+      }
+    }
+  }
 
-#   depends_on = [
-#     helm_release.nginx_ingress,
-#     kubernetes_service.ingress_service
-#   ]
+  depends_on = [
+    helm_release.nginx_ingress
+  ]
 
-# }
+}
