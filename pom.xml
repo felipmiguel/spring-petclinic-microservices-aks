@@ -170,6 +170,52 @@
                 </plugins>
             </build>
         </profile>
+        <profile>
+            <id>buildAcrDebug</id>
+            <build>
+                <plugins>
+                    <plugin>
+                        <groupId>org.codehaus.mojo</groupId>
+                        <artifactId>exec-maven-plugin</artifactId>
+                        <version>3.0.0</version>
+                        <executions>
+                            <execution>
+                                <id>acr-package</id>
+                                <phase>package</phase>
+                                <goals>
+                                    <goal>exec</goal>
+                                </goals>
+                                <configuration>
+                                    <executable>az</executable>
+                                    <workingDirectory>${project.basedir}</workingDirectory>
+                                    <arguments>
+                                        <argument>acr</argument>
+                                        <argument>build</argument>
+                                        <argument>--resource-group</argument>
+                                        <argument>${RESOURCE_GROUP}</argument>
+                                        <argument>--registry</argument>
+                                        <argument>${ACR_NAME}</argument>
+                                        <argument>--image</argument>
+                                        <argument>${project.artifactId}:${project.version}-debug</argument>
+                                        <argument>-t</argument>
+                                        <argument>${project.artifactId}:debug</argument>
+                                        <argument>--build-arg</argument>
+                                        <argument>ARTIFACT_NAME=target/${project.build.finalName}.jar</argument>
+                                        <argument>--build-arg</argument>
+                                        <argument>EXPOSED_PORT=${docker.image.exposed.port}</argument>
+                                        <argument>--build-arg</argument>
+                                        <argument>DEBUG_PORT=5005</argument>
+                                        <argument>-f</argument>
+                                        <argument>${docker.image.dockerfile.dir}/DockerfileDebug</argument>
+                                        <argument>.</argument>
+                                    </arguments>
+                                </configuration>
+                            </execution>
+                        </executions>
+                    </plugin>
+                </plugins>
+            </build>
+        </profile>
 
         <profile>
             <id>buildDocker</id>

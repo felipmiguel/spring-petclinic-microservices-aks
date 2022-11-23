@@ -5,6 +5,9 @@ ARG EXPOSED_PORT
 # assumes the application entry port is 8080
 EXPOSE ${EXPOSED_PORT}
 
+# exposes debug port
+EXPOSE 8000
+
 # The application's jar file
 ARG JAR_FILE=${ARTIFACT_NAME}
 
@@ -12,4 +15,4 @@ ARG JAR_FILE=${ARTIFACT_NAME}
 ADD ${JAR_FILE} app.jar
 
 # Run the jar file
-ENTRYPOINT ["java", "", "-jar","/app.jar"]
+ENTRYPOINT ["java","-agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=8000", "-jar","/app.jar"]

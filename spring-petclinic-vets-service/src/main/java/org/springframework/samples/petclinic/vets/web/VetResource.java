@@ -39,8 +39,12 @@ class VetResource {
 
     private final VetRepository vetRepository;
 
+    
+
     @GetMapping
     public List<Vet> showResourcesVetList() {
+        String userName= System.getenv("SPRING_DATASOURCE_USERNAME");
+        String url = System.getenv("SPRING_DATASOURCE_URL");
         return vetRepository.findAll();
     }
 }

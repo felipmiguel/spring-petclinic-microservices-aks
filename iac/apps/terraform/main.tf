@@ -179,7 +179,7 @@ module "k8s_apps" {
   namespace            = kubernetes_namespace.app_namespace.metadata[0].name
   aks_oidc_issuer_url  = data.azurerm_kubernetes_cluster.aks.oidc_issuer_url
   database_url         = var.database_url
-  image                = "${var.registry_url}/${var.apps[count.index]}:${var.apps_version}"
+  image                = "${var.registry_url}/${var.apps[count.index]}:debug"
   profile              = var.profile
   container_port       = var.container_port
   database_name        = var.database_name
@@ -201,7 +201,7 @@ module "identity_demo_app" {
   namespace            = kubernetes_namespace.app_namespace.metadata[0].name
   aks_oidc_issuer_url  = data.azurerm_kubernetes_cluster.aks.oidc_issuer_url
   database_url         = var.database_url
-  image                = "${var.registry_url}/${local.java_service}:${var.apps_version}"
+  image                = "${var.registry_url}/${local.java_service}:debug"
   profile              = var.profile
   container_port       = var.container_port
   database_name        = var.database_name
@@ -216,70 +216,70 @@ module "identity_demo_app" {
   ]
 }
 
-module "sample_workload_app" {
-  source               = "./modules/k8s-app"
-  resource_group       = var.resource_group
-  application_name     = var.application_name
-  environment          = local.environment
-  location             = var.location
-  appname              = local.dotnet_service
-  namespace            = kubernetes_namespace.app_namespace.metadata[0].name
-  aks_oidc_issuer_url  = data.azurerm_kubernetes_cluster.aks.oidc_issuer_url
-  database_url         = var.database_url
-  image                = "${var.registry_url}/${local.dotnet_service}:${var.apps_version}"
-  profile              = var.profile
-  container_port       = 80
-  database_name        = var.database_name
-  database_server_fqdn = var.database_server_fqdn
-  database_server_name = var.database_server_name
-  health_check_path    = "/healthz"
-  depends_on = [
-    module.config_server,
-    module.discovery_server
-  ]
-}
+# module "sample_workload_app" {
+#   source               = "./modules/k8s-app"
+#   resource_group       = var.resource_group
+#   application_name     = var.application_name
+#   environment          = local.environment
+#   location             = var.location
+#   appname              = local.dotnet_service
+#   namespace            = kubernetes_namespace.app_namespace.metadata[0].name
+#   aks_oidc_issuer_url  = data.azurerm_kubernetes_cluster.aks.oidc_issuer_url
+#   database_url         = var.database_url
+#   image                = "${var.registry_url}/${local.dotnet_service}:${var.apps_version}"
+#   profile              = var.profile
+#   container_port       = 80
+#   database_name        = var.database_name
+#   database_server_fqdn = var.database_server_fqdn
+#   database_server_name = var.database_server_name
+#   health_check_path    = "/healthz"
+#   depends_on = [
+#     module.config_server,
+#     module.discovery_server
+#   ]
+# }
 
 
-module "mssql_workload_app" {
-  source               = "./modules/k8s-app"
-  resource_group       = var.resource_group
-  application_name     = var.application_name
-  environment          = local.environment
-  location             = var.location
-  appname              = local.mssql_service
-  namespace            = kubernetes_namespace.app_namespace.metadata[0].name
-  aks_oidc_issuer_url  = data.azurerm_kubernetes_cluster.aks.oidc_issuer_url
-  database_url         = var.database_url
-  image                = "${var.registry_url}/${local.mssql_service}:${var.apps_version}"
-  profile              = var.profile
-  container_port       = 80
-  database_name        = var.database_name
-  database_server_fqdn = var.database_server_fqdn
-  database_server_name = var.database_server_name
-  health_check_path    = "/healthz"
-  depends_on = [
-    module.config_server,
-    module.discovery_server
-  ]
-}
+# module "mssql_workload_app" {
+#   source               = "./modules/k8s-app"
+#   resource_group       = var.resource_group
+#   application_name     = var.application_name
+#   environment          = local.environment
+#   location             = var.location
+#   appname              = local.mssql_service
+#   namespace            = kubernetes_namespace.app_namespace.metadata[0].name
+#   aks_oidc_issuer_url  = data.azurerm_kubernetes_cluster.aks.oidc_issuer_url
+#   database_url         = var.database_url
+#   image                = "${var.registry_url}/${local.mssql_service}:${var.apps_version}"
+#   profile              = var.profile
+#   container_port       = 80
+#   database_name        = var.database_name
+#   database_server_fqdn = var.database_server_fqdn
+#   database_server_name = var.database_server_name
+#   health_check_path    = "/healthz"
+#   depends_on = [
+#     module.config_server,
+#     module.discovery_server
+#   ]
+# }
 
-module "k8s_svcs" {
-  count            = length(var.cloud_services)
-  source           = "./modules/k8s-svc"
-  resource_group   = var.resource_group
-  application_name = var.application_name
-  environment      = local.environment
-  location         = var.location
-  appname          = var.cloud_services[count.index]
-  namespace        = kubernetes_namespace.app_namespace.metadata[0].name
-  image            = "${var.registry_url}/${var.cloud_services[count.index]}:${var.apps_version}"
-  profile          = var.profile
-  container_port   = var.container_port
-  depends_on = [
-    module.config_server,
-    module.discovery_server
-  ]
-}
+# module "k8s_svcs" {
+#   count            = length(var.cloud_services)
+#   source           = "./modules/k8s-svc"
+#   resource_group   = var.resource_group
+#   application_name = var.application_name
+#   environment      = local.environment
+#   location         = var.location
+#   appname          = var.cloud_services[count.index]
+#   namespace        = kubernetes_namespace.app_namespace.metadata[0].name
+#   image            = "${var.registry_url}/${var.cloud_services[count.index]}:${var.apps_version}"
+#   profile          = var.profile
+#   container_port   = var.container_port
+#   depends_on = [
+#     module.config_server,
+#     module.discovery_server
+#   ]
+# }
 
 module "ingress" {
   source    = "./modules/ingress"

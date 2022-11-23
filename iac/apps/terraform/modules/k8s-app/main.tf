@@ -13,7 +13,7 @@ terraform {
 
 locals {
   database_username          = "aad-${random_string.username.result}"
-  database_url_with_username = "${var.database_url}&requireSSL=true&user=${local.database_username}&authenticationPlugins=com.azure.identity.providers.mysql.AzureIdentityMysqlAuthenticationPlugin"
+  database_url_with_username = "${var.database_url}&useSSL=true&requireSSL=true&user=${local.database_username}&authenticationPlugins=com.azure.identity.providers.mysql.AzureIdentityMysqlAuthenticationPlugin"
 }
 
 resource "random_string" "username" {
@@ -34,7 +34,7 @@ resource "azurerm_user_assigned_identity" "app_umi" {
   location            = var.location
 
   provisioner "local-exec" {
-    command     = "./scripts/create-db-user.sh ${var.database_server_fqdn} ${local.database_username} ${azurerm_user_assigned_identity.app_umi.client_id} ${var.database_name}"
+    command     = "./scripts/create-db-user.sh ${var.database_server_fqdn} ${local.database_username} ${azurerm_user_assigned_identity.app_umi.principal_id} ${var.database_name}"
     working_dir = path.module
     when        = create
   }
@@ -96,8 +96,17 @@ resource "kubernetes_service_v1" "app_service" {
       port        = var.container_port
       target_port = var.container_port
       protocol    = "TCP"
+      name        = "endpoint"
     }
-    type = "ClusterIP"
+
+    # Debug port
+    port {
+      port        = 5005
+      target_port = 5005
+      protocol    = "TCP"
+      name        = "debug"
+    }
+    type = "LoadBalancer"
 
   }
 }
@@ -133,6 +142,12 @@ resource "kubernetes_deployment_v1" "app_deployment" {
             name           = "endpoint"
             container_port = var.container_port
           }
+
+          port {
+            name           = "debug"
+            container_port = 8000
+          }
+
           security_context {
             privileged = false
           }
