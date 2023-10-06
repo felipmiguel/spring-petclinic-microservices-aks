@@ -2,13 +2,13 @@ terraform {
   required_providers {
     azurecaf = {
       source  = "aztfmod/azurecaf"
-      version = "1.2.16"
+      version = "1.2.26"
     }
-    azapi = {
-      source  = "azure/azapi"
-    }
+    # azapi = {
+    #   source = "azure/azapi"
+    # }
     azuread = {
-      source  = "hashicorp/azuread"
+      source = "hashicorp/azuread"
     }
   }
 }
@@ -36,13 +36,26 @@ resource "azurerm_mysql_flexible_server" "database" {
   sku_name                     = "B_Standard_B1ms"
   backup_retention_days        = 7
   geo_redundant_backup_enabled = false
-  zone                         = "1"
+  zone                         = "2"
+  identity {
+    type         = "UserAssigned"
+    identity_ids = [azurerm_user_assigned_identity.mysql_umi.id]
+  }
 
 
   tags = {
     "environment"      = var.environment
     "application-name" = var.application_name
   }
+}
+
+resource "azurerm_mysql_flexible_server_active_directory_administrator" "mysql_aad_admin" {
+  server_id           = azurerm_mysql_flexible_server.database.id
+  login               = "sqladmin"
+  identity_id         = azurerm_user_assigned_identity.mysql_umi.id
+
+  tenant_id = data.azurerm_client_config.current_client.tenant_id
+  object_id = data.azurerm_client_config.current_client.object_id
 }
 
 resource "azurerm_mysql_flexible_database" "database" {
@@ -109,27 +122,29 @@ data "azurerm_resource_group" "parent_rg" {
   name = var.resource_group
 }
 
-resource "azapi_update_resource" "mysql_tf_identity" {
-  type      = "Microsoft.DBForMySql/flexibleServers@2021-12-01-preview"
-  name      = azurerm_mysql_flexible_server.database.name
-  parent_id = data.azurerm_resource_group.parent_rg.id
 
-  body = jsonencode({
-    identity : {
-      userAssignedIdentities : {
-        "${azurerm_user_assigned_identity.mysql_umi.id}" : {}
-      },
-      type : "UserAssigned"
-    },
-  })
-  
-  timeouts {
-    create = "5m"
-    update = "5m"
-    delete = "5m"
-    read   = "3m"
-  }
-}
+
+# resource "azapi_update_resource" "mysql_tf_identity" {
+#   type      = "Microsoft.DBForMySql/flexibleServers@2021-12-01-preview"
+#   name      = azurerm_mysql_flexible_server.database.name
+#   parent_id = data.azurerm_resource_group.parent_rg.id
+
+#   body = jsonencode({
+#     identity : {
+#       userAssignedIdentities : {
+#         "${azurerm_user_assigned_identity.mysql_umi.id}" : {}
+#       },
+#       type : "UserAssigned"
+#     },
+#   })
+
+#   timeouts {
+#     create = "5m"
+#     update = "5m"
+#     delete = "5m"
+#     read   = "3m"
+#   }
+# }
 
 data "azuread_user" "aad_admin" {
   user_principal_name = var.mysql_aad_admin
@@ -138,27 +153,27 @@ data "azuread_user" "aad_admin" {
 data "azurerm_client_config" "current_client" {
 }
 
-resource "azapi_resource" "mysql_aad_admin" {
-  type = "Microsoft.DBforMySQL/flexibleServers/administrators@2021-12-01-preview"
-  name = "ActiveDirectory"
-  depends_on = [
-    azapi_update_resource.mysql_tf_identity,
-    azurerm_mysql_flexible_server.database
-  ]
-  parent_id = azurerm_mysql_flexible_server.database.id
-  body = jsonencode({
-    properties = {
-      administratorType  = "ActiveDirectory"
-      identityResourceId = azurerm_user_assigned_identity.mysql_umi.id
-      login              = data.azuread_user.aad_admin.user_principal_name
-      sid                = data.azuread_user.aad_admin.object_id
-      tenantId           = data.azurerm_client_config.current_client.tenant_id
-    }
-  })
-  timeouts {
-    create = "10m"
-    update = "5m"
-    delete = "10m"
-    read   = "3m"
-  }
-}
+# resource "azapi_resource" "mysql_aad_admin" {
+#   type = "Microsoft.DBforMySQL/flexibleServers/administrators@2021-12-01-preview"
+#   name = "ActiveDirectory"
+#   depends_on = [
+#     azapi_update_resource.mysql_tf_identity,
+#     azurerm_mysql_flexible_server.database
+#   ]
+#   parent_id = azurerm_mysql_flexible_server.database.id
+#   body = jsonencode({
+#     properties = {
+#       administratorType  = "ActiveDirectory"
+#       identityResourceId = azurerm_user_assigned_identity.mysql_umi.id
+#       login              = data.azuread_user.aad_admin.user_principal_name
+#       sid                = data.azuread_user.aad_admin.object_id
+#       tenantId           = data.azurerm_client_config.current_client.tenant_id
+#     }
+#   })
+#   timeouts {
+#     create = "10m"
+#     update = "5m"
+#     delete = "10m"
+#     read   = "3m"
+#   }
+# }

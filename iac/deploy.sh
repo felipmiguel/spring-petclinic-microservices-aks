@@ -7,15 +7,15 @@
 
 cd aks/terraform
 # Get current user
-CURRENT_USER_OID=$(az ad signed-in-user show --query id -o tsv)
-CURRENT_USER_SPN=$(az ad signed-in-user show --query userPrincipalName -o tsv)
-cat <<EOF > terraform.tfvars
-admin_ids = ["$CURRENT_USER_OID"]
-mysql_aad_admin = "$CURRENT_USER_SPN"
-EOF
-terraform fmt
-terraform init
-terraform apply -auto-approve
+# CURRENT_USER_OID=$(az ad signed-in-user show --query id -o tsv)
+# CURRENT_USER_SPN=$(az ad signed-in-user show --query userPrincipalName -o tsv)
+# cat <<EOF > terraform.tfvars
+# admin_ids = ["$CURRENT_USER_OID"]
+# mysql_aad_admin = "$CURRENT_USER_SPN"
+# EOF
+# terraform fmt
+# terraform init
+# terraform apply
 
 ACR_NAME=$(terraform output -raw acr_name)
 RESOURCE_GROUP=$(terraform output -raw resource_group)

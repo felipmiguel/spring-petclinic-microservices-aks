@@ -1,7 +1,7 @@
 variable "application_name" {
   type        = string
   description = "The name of your application"
-  default     = "petclinic-ms-182746"
+  default     = "petclinic-alg-93832"
 }
 
 variable "environment" {
@@ -13,7 +13,12 @@ variable "environment" {
 variable "location" {
   type        = string
   description = "The Azure region where all resources in this example should be created"
-  default     = "eastus"
+  default     = "westeurope"
+}
+
+variable "admin_group_id" {
+  type        = string
+  description = "Existing group Id to be used as AKS admins. If this variable is used `admin_ids` is ignored"
 }
 
 variable "admin_ids" {
@@ -23,7 +28,7 @@ variable "admin_ids" {
 
 variable "dns_prefix" {
   type    = string
-  default = "spring-petclinic-ms"
+  default = "spring-petclinic-alg"
 }
 
 variable "mysql_aad_admin" {

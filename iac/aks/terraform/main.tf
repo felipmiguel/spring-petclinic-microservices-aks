@@ -2,11 +2,11 @@ terraform {
   required_providers {
     azurerm = {
       source  = "hashicorp/azurerm"
-      version = "3.30.0"
+      version = "3.75.0"
     }
     azurecaf = {
       source  = "aztfmod/azurecaf"
-      version = "1.2.16"
+      version = "1.2.26"
     }
     azapi = {
       source = "azure/azapi"
@@ -16,9 +16,9 @@ terraform {
     }
   }
   backend "azurerm" {
-    resource_group_name  = "rg-terraformstate"
-    storage_account_name = "terraformstate26020"
-    container_name       = "springstate"
+    resource_group_name  = "rg-fm-tfsate"
+    storage_account_name = "fmtfstate11856"
+    container_name       = "tfstate"
     key                  = "terraform.tfstate"
   }
 }
@@ -65,7 +65,7 @@ module "service" {
   environment                    = local.environment
   location                       = var.location
   acr_id                         = module.acr.acr_id
-  aks_rbac_admin_group_object_id = module.admins.admin_group_id
+  aks_rbac_admin_group_object_id = local.admin_group_id
   dns_prefix                     = var.dns_prefix
 }
 
@@ -94,11 +94,18 @@ module "acr" {
   location         = var.location
 }
 
-
-module "admins" {
-  source           = "./modules/admins"
-  application_name = var.application_name
-  environment      = local.environment
-  admin_ids        = var.admin_ids
+locals {
+  admin_group_id = var.admin_group_id
 }
+
+# locals {
+#   admin_group_id = length(var.admin_group_id) > 0 ? var.admin_group_id : module.admins[0].admin_group_id
+# }
+# module "admins" {
+#   count            = length(var.admin_group_id) == 0 ? 0 : 1
+#   source           = "./modules/admins"
+#   application_name = var.application_name
+#   environment      = local.environment
+#   admin_ids        = var.admin_ids
+# }
 

@@ -6,7 +6,7 @@ terraform {
     }
     azurecaf = {
       source  = "aztfmod/azurecaf"
-      version = "1.2.16"
+      version = "1.2.26"
     }
     azapi = {
       source = "azure/azapi"
@@ -23,8 +23,8 @@ terraform {
     }
   }
   backend "azurerm" {
-    resource_group_name  = "rg-terraformstate"
-    storage_account_name = "terraformstate26020"
+    resource_group_name  = "rg-fm-tfsate"
+    storage_account_name = "fmtfstate11856"
     container_name       = "appstate"
     key                  = "terraform.tfstate"
   }
@@ -305,7 +305,7 @@ module "ingress" {
     path    = "/java(/|$)(.*)"
     service = local.java_service
     port    = var.container_port
-  }, {
+    }, {
     name    = local.mssql_service
     path    = "/mssql(/|$)(.*)"
     service = local.mssql_service

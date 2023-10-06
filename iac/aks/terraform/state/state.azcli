@@ -1,17 +1,19 @@
-rgName=rg-terraformstate
+rgName=rg-fm-tfsate
 random=$RANDOM 
-saName=terraformstate${random}
-containerName=springstate
+saName=fmtfstate${random}
+containerName=tfstate
 
 # Create Azure Resource Group
 az group create \
     --name $rgName \
-    --location eastus
+    --location westeurope
 # Create Storage Account with public access disabled
 az storage account create \
     --resource-group $rgName \
     --name $saName \
     --sku Standard_LRS \
+    --min-tls-version TLS1_2 \
+    --https-only true \
     --allow-blob-public-access $false
 # Create container to store configuration state file
 az storage container create \
