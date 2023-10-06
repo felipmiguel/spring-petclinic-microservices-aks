@@ -25,9 +25,9 @@ variable "apps" {
   type        = list(string)
   description = "List of applications to deploy"
   default = [
-    # "spring-petclinic-customers-service",
+    "spring-petclinic-customers-service",
     "spring-petclinic-vets-service",
-    # "spring-petclinic-visits-service"
+    "spring-petclinic-visits-service"
   ]
 }
 

@@ -8,9 +8,6 @@ terraform {
       source  = "aztfmod/azurecaf"
       version = "1.2.26"
     }
-    azapi = {
-      source = "azure/azapi"
-    }
     azuread = {
       source = "hashicorp/azuread"
     }
@@ -21,9 +18,6 @@ terraform {
     container_name       = "tfstate"
     key                  = "terraform.tfstate"
   }
-}
-
-provider "azapi" {
 }
 
 provider "azurerm" {

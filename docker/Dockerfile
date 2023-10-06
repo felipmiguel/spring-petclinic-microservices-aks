@@ -1,4 +1,4 @@
-FROM openjdk:8-jdk-slim
+FROM mcr.microsoft.com/openjdk/jdk:11-mariner
 # takes the jar file as an argument
 ARG ARTIFACT_NAME
 ARG EXPOSED_PORT

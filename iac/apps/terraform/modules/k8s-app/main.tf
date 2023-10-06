@@ -4,9 +4,6 @@ terraform {
       source  = "aztfmod/azurecaf"
       version = "1.2.26"
     }
-    azapi = {
-      source = "azure/azapi"
-    }
   }
 }
 
@@ -66,28 +63,6 @@ resource "azurerm_federated_identity_credential" "federated_credential" {
   subject                = "system:serviceaccount:${var.namespace}:${var.appname}"
   parent_id              = azurerm_user_assigned_identity.app_umi.id
 }
-
-# resource "azapi_resource" "federated_credential" {
-#   type      = "Microsoft.ManagedIdentity/userAssignedIdentities/federatedIdentityCredentials@2022-01-31-preview"
-#   name      = "fc-${var.appname}"
-#   parent_id = azurerm_user_assigned_identity.app_umi.id
-#   body = jsonencode({
-#     properties = {
-#       audiences = ["api://AzureADTokenExchange"]
-#       issuer    = var.aks_oidc_issuer_url
-#       subject   = "system:serviceaccount:${var.namespace}:${var.appname}"
-#     }
-#   })
-# }
-
-# resource "azuread_application_federated_identity_credential" "federated_credential" {
-#   application_object_id = azurerm_user_assigned_identity.app_umi.id
-#   display_name          = var.appname
-#   audiences             = ["api://AzureADTokenExchange"]
-#   issuer                = var.aks_oidc_issuer_url
-#   subject               = "system:serviceaccount:${var.namespace}:${var.appname}"
-# }
-
 
 resource "kubernetes_service_v1" "app_service" {
   metadata {
@@ -197,6 +172,12 @@ resource "kubernetes_deployment_v1" "app_deployment" {
       }
 
     }
+  }
+
+  timeouts {
+    create = "2m"
+    update = "2m"
+    delete = "2m"
   }
 
 }

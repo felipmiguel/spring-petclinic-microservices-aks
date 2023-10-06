@@ -69,6 +69,7 @@ resource "kubernetes_deployment_v1" "app_deployment" {
             initial_delay_seconds = 30
             period_seconds        = 30
           }
+          
         }
       }
 
